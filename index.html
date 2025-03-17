@@ -81,7 +81,7 @@
       const trail = document.createElement('div');
       trail.className = 'cursor-trail';
       trail.style.left = `${e.pageX}px`;
-      trail.style.top = `${e.pageY + window.scrollY}px`;
+      trail.style.top = `${e.clientY + window.scrollY}px`;
       document.body.appendChild(trail);
       setTimeout(() => trail.remove(), 1500);
     });
