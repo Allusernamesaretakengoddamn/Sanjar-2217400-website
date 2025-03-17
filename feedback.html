@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Feedback</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    body, html {
+      height: 100vh;
+      margin: 0;
+      background-color: black;
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+    }
+
+    .star {
+      position: absolute;
+      background-color: white;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: moveStar 3s linear forwards;
+    }
+
+    @keyframes moveStar {
+      from { opacity: 0; transform: scale(0.2); }
+      50% { opacity: 1; }
+      to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
+    }
+
+    .cursor-trail {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background-color: rgba(209, 213, 219, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: 0 0 10px rgba(209, 213, 219, 0.5);
+      animation: fadeOut 1.5s linear forwards;
+    }
+
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; transform: scale(1.5); }
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen relative text-gray-100">
+  <h1 class="text-3xl font-medium mb-6">Leave Feedback</h1>
+  <textarea id="feedbackInput" class="w-3/4 h-32 p-4 text-lg text-black" placeholder="Write your feedback here..."></textarea>
+  <button onclick="submitFeedback()" class="mt-4 px-6 py-2 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100">Submit</button>
+  <div class="w-3/4 mt-6 text-left" id="feedbackList"></div>
+  <a href="index.html" class="mt-8 text-lg underline">Back to Home</a>
+  
+  <script>
+    function submitFeedback() {
+      const input = document.getElementById('feedbackInput');
+      const feedback = input.value.trim();
+      if (feedback === '') return;
+      let feedbackList = JSON.parse(localStorage.getItem('feedback')) || [];
+      feedbackList.push(feedback);
+      localStorage.setItem('feedback', JSON.stringify(feedbackList));
+      input.value = '';
+      displayFeedback();
+    }
+
+    function displayFeedback() {
+      const feedbackList = JSON.parse(localStorage.getItem('feedback')) || [];
+      const feedbackContainer = document.getElementById('feedbackList');
+      feedbackContainer.innerHTML = '';
+      feedbackList.forEach((feedback, index) => {
+        const div = document.createElement('div');
+        div.className = 'p-4 bg-gray-800 bg-opacity-50 rounded-xl mt-2 flex justify-between items-center';
+        div.innerHTML = `<span>${feedback}</span> <button onclick="deleteFeedback(${index})" class="text-red-500 text-sm">Delete</button>`;
+        feedbackContainer.appendChild(div);
+      });
+    }
+
+    function deleteFeedback(index) {
+      let feedbackList = JSON.parse(localStorage.getItem('feedback')) || [];
+      feedbackList.splice(index, 1);
+      localStorage.setItem('feedback', JSON.stringify(feedbackList));
+      displayFeedback();
+    }
+
+    displayFeedback();
+
+    document.addEventListener('mousemove', (e) => {
+      const trail = document.createElement('div');
+      trail.className = 'cursor-trail';
+      trail.style.left = `${e.pageX}px`;
+      trail.style.top = `${e.pageY}px`;
+      document.body.appendChild(trail);
+      setTimeout(() => trail.remove(), 1500);
+    });
+
+    setInterval(() => {
+      for (let i = 0; i < 15; i++) {
+        const star = document.createElement('div');
+        star.className = 'star';
+        const size = Math.random() * 2 + 1;
+        star.style.width = size + 'px';
+        star.style.height = size + 'px';
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+        star.style.left = x + 'px';
+        star.style.top = y + 'px';
+        const dx = (x - window.innerWidth / 2) * 5;
+        const dy = (y - window.innerHeight / 2) * 5;
+        star.style.setProperty('--dx', dx + 'px');
+        star.style.setProperty('--dy', dy + 'px');
+        document.body.appendChild(star);
+        setTimeout(() => star.remove(), 3000);
+      }
+    }, 100);
+  </script>
+</body>
+</html>
