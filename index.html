@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -31,14 +32,17 @@
     }
 
     .cursor-trail {
-      position: absolute;
+      position: fixed; /* Changed to 'fixed' for fixed positioning relative to the viewport */
       width: 18px;
       height: 18px;
       background-color: rgba(209, 213, 219, 0.5);
       border-radius: 50%;
       pointer-events: none;
-      box-shadow: 0 0 10px rgba(209, 213, 219, 0.5);
+      box-shadow: 0 0 15px rgba(209, 213, 219, 0.7); /* Enhanced shadow for smoother appearance */
       animation: fadeOut 1.5s linear forwards;
+      z-index: 1000; /* Ensure it's above other content */
+      transform: scale(0.8); /* Slightly smaller scale for a more natural effect */
+      opacity: 0.8; /* Slight opacity adjustment to blend better */
     }
 
     @keyframes fadeOut {
@@ -80,16 +84,13 @@
     document.addEventListener('mousemove', (e) => {
       const trail = document.createElement('div');
       trail.className = 'cursor-trail';
-      trail.style.left = `${e.pageX}px`;
-      trail.style.top = `${e.clientY + window.scrollY}px`;
-      document.body.appendChild(trail);
-      setTimeout(() => trail.remove(), 1500);
-    });
 
-    document.addEventListener('scroll', () => {
-      document.querySelectorAll('.cursor-trail').forEach(trail => {
-        trail.style.position = 'absolute';
-      });
+      // Position fixed to the viewport, no need for scroll adjustments
+      trail.style.left = `${e.pageX}px`;
+      trail.style.top = `${e.pageY}px`;  // Trail moves with the cursor
+
+      document.body.appendChild(trail);
+      setTimeout(() => trail.remove(), 1500);  // Trail disappears after a short duration
     });
 
     let lastX = 0, lastY = 0;
@@ -101,10 +102,13 @@
         lastY = e.pageY;
         const trail = document.createElement('div');
         trail.className = 'cursor-trail';
+
+        // Position fixed to the viewport, no need for scroll adjustments
         trail.style.left = `${e.pageX}px`;
-        trail.style.top = `${e.pageY}px`;
+        trail.style.top = `${e.pageY}px`;  // Trail moves with the cursor
+
         document.body.appendChild(trail);
-        setTimeout(() => trail.remove(), 1500);
+        setTimeout(() => trail.remove(), 1500);  // Trail disappears after a short duration
       }
     });
   </script>
