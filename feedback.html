@@ -45,6 +45,27 @@
       from { opacity: 1; }
       to { opacity: 0; transform: scale(1.5); }
     }
+
+    /* Loading Icon Styles (Heartbeat Animation) */
+    .loading-icon {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      background-color: rgba(0, 0, 0, 0.7); /* Black circle with transparency */
+      border-radius: 50%;
+      animation: heartbeat 1.5s ease-in-out infinite;
+      top: 50%;
+      left: 50%;
+      margin-top: -25px;
+      margin-left: -25px;
+      visibility: hidden; /* Initially hidden */
+    }
+
+    /* Heartbeat animation for the loading circle */
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); } /* Expand the circle */
+    }
   </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen relative text-gray-100">
@@ -53,40 +74,70 @@
   <button onclick="submitFeedback()" class="mt-4 px-6 py-2 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100">Submit</button>
   <div class="w-3/4 mt-6 text-left" id="feedbackList"></div>
   <a href="index.html" class="mt-8 text-lg underline">Back to Home</a>
-  
+
+  <!-- Loading Icon (steam-like circle) -->
+  <div id="loadingIcon" class="loading-icon"></div>
+
   <script>
+    // Replace with your Google Apps Script URL
+    const feedbackUrl = "https://script.google.com/macros/s/AKfycbzRPbV739fgRaZP1rFZ_aX5R1pIiVfqvxKv9jqQLfTlIWEf9YN9BeKFfA9TA0i0v7c22w/exec";
+
+    // Function to submit feedback to Google Sheets
     function submitFeedback() {
       const input = document.getElementById('feedbackInput');
       const feedback = input.value.trim();
-      if (feedback === '') return;
-      let feedbackList = JSON.parse(localStorage.getItem('feedback')) || [];
-      feedbackList.push(feedback);
-      localStorage.setItem('feedback', JSON.stringify(feedbackList));
-      input.value = '';
-      displayFeedback();
-    }
+      const loadingIcon = document.getElementById('loadingIcon'); // Get the loading icon element
 
-    function displayFeedback() {
-      const feedbackList = JSON.parse(localStorage.getItem('feedback')) || [];
-      const feedbackContainer = document.getElementById('feedbackList');
-      feedbackContainer.innerHTML = '';
-      feedbackList.forEach((feedback, index) => {
-        const div = document.createElement('div');
-        div.className = 'p-4 bg-gray-800 bg-opacity-50 rounded-xl mt-2 flex justify-between items-center';
-        div.innerHTML = `<span>${feedback}</span> <button onclick="deleteFeedback(${index})" class="text-red-500 text-sm">Delete</button>`;
-        feedbackContainer.appendChild(div);
+      if (feedback === '') return;
+
+      // Show the loading icon
+      loadingIcon.style.visibility = 'visible';
+
+      // Send feedback to Google Sheets via the Apps Script URL
+      fetch(feedbackUrl, {
+        method: 'POST',
+        body: new URLSearchParams({
+          feedback: feedback
+        })
+      })
+      .then(response => response.text())
+      .then(result => {
+        console.log('Feedback submitted:', result);
+        input.value = ''; // Clear input after submission
+        displayFeedback(); // Refresh feedback list
+        loadingIcon.style.visibility = 'hidden'; // Hide the loading icon once done
+      })
+      .catch(error => {
+        console.error('Error submitting feedback:', error);
+        loadingIcon.style.visibility = 'hidden'; // Hide the loading icon on error
       });
     }
 
-    function deleteFeedback(index) {
-      let feedbackList = JSON.parse(localStorage.getItem('feedback')) || [];
-      feedbackList.splice(index, 1);
-      localStorage.setItem('feedback', JSON.stringify(feedbackList));
-      displayFeedback();
+    // Function to display feedback from Google Sheets
+    function displayFeedback() {
+      fetch(feedbackUrl + "?action=get")
+        .then(response => response.json())
+        .then(data => {
+          const feedbackContainer = document.getElementById('feedbackList');
+          feedbackContainer.innerHTML = ''; // Clear previous feedback
+          data.forEach((feedback, index) => {
+            const div = document.createElement('div');
+            div.className = 'p-4 bg-gray-800 bg-opacity-50 rounded-xl mt-2 flex justify-between items-center';
+            div.innerHTML = `
+              <span>${feedback.timestamp}: ${feedback.feedback}</span>
+            `;
+            feedbackContainer.appendChild(div);
+          });
+        })
+        .catch(error => {
+          console.error('Error retrieving feedback:', error);
+        });
     }
 
+    // Display feedback when the page loads
     displayFeedback();
 
+    // Add cursor trail effect
     document.addEventListener('mousemove', (e) => {
       const trail = document.createElement('div');
       trail.className = 'cursor-trail';
@@ -96,6 +147,7 @@
       setTimeout(() => trail.remove(), 1500);
     });
 
+    // Generate random stars
     setInterval(() => {
       for (let i = 0; i < 15; i++) {
         const star = document.createElement('div');
