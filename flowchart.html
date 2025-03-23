@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Logistics Flowchart Builder</title>
+  <!-- Google Font for a futuristic look -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <style>
+    /* Global styles */
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      overflow: hidden;
+    }
+    /* Sidebar styling */
+    #sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 250px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    #sidebar h2 {
+      margin-top: 0;
+      font-size: 18px;
+      border-bottom: 1px solid #555;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+    }
+    #sidebar label {
+      font-size: 14px;
+      display: block;
+      margin-bottom: 5px;
+    }
+    #sidebar button, #sidebar input[type="color"] {
+      width: 100%;
+      background: #1f1f1f;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+    }
+    #sidebar button:hover, #sidebar input[type="color"]:hover {
+      background: #333;
+    }
+    #sidebar button:active {
+      transform: scale(0.95);
+    }
+    #sidebar input[type="color"] {
+      height: 40px;
+      cursor: pointer;
+    }
+    /* Main flowchart container */
+    #flowchart-container {
+      position: relative;
+      margin-left: 250px;
+      width: calc(100vw - 250px);
+      height: 100vh;
+      border: 1px solid #444;
+      overflow: auto;
+    }
+    /* Node styling */
+    .node {
+      position: absolute;
+      width: 150px;
+      padding: 10px;
+      background: rgba(50, 50, 50, 0.8);
+      border: 2px solid #555;
+      border-radius: 5px;
+      cursor: move;
+      text-align: center;
+    }
+    .node:hover {
+      border-color: #fff;
+    }
+    .node-label {
+      pointer-events: none;
+      user-select: none;
+    }
+    /* Free draw canvas styling */
+    #freeDrawCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      /* When free draw mode is off, pointer-events will be set to none */
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <!-- Left sidebar for controls -->
+  <div id="sidebar">
+    <h2>Add Node</h2>
+    <button id="add-supplier">Supplier</button>
+    <button id="add-warehouse">Warehouse</button>
+    <button id="add-distribution">Distribution</button>
+    <button id="add-retail">Retail</button>
+    <button id="add-transport">Transport</button>
+    
+    <h2>Flow Options</h2>
+    <button id="clear-flowchart">Clear Flowchart</button>
+    
+    <h2>Save on Device</h2>
+    <button id="save-png">Save as PNG</button>
+    <button id="save-pdf">Save as PDF</button>
+    
+    <h2>Free Draw</h2>
+    <button id="toggle-free-draw">Free Draw: Off</button>
+    
+    <h2>Drawing Tools</h2>
+    <label for="draw-color">Choose Color:</label>
+    <input type="color" id="draw-color" value="#FF4500">
+    <button id="toggle-eraser">Eraser: Off</button>
+  </div>
+  
+  <!-- Main container for the flowchart -->
+  <div id="flowchart-container"></div>
+
+  <!-- Include required libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPlumb/2.15.6/js/jsplumb.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    // Global variables for nodes and drawing
+    let nodeCounter = 0;
+    const container = document.getElementById("flowchart-container");
+
+    // Free drawing variables
+    let freeDrawMode = false;
+    let eraserMode = false;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let ctx;
+    let freeDrawCanvas;
+
+    // Initialize the free draw canvas if not already created
+    function initFreeDrawCanvas() {
+      if (!freeDrawCanvas) {
+        freeDrawCanvas = document.createElement("canvas");
+        freeDrawCanvas.id = "freeDrawCanvas";
+        freeDrawCanvas.width = container.clientWidth;
+        freeDrawCanvas.height = container.clientHeight;
+        container.appendChild(freeDrawCanvas);
+        ctx = freeDrawCanvas.getContext("2d");
+        // Default drawing settings
+        ctx.strokeStyle = document.getElementById("draw-color").value;
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.globalCompositeOperation = eraserMode ? "destination-out" : "source-over";
+      }
+    }
+
+    // Update canvas size on window resize
+    function updateCanvasSize() {
+      if (freeDrawCanvas) {
+        freeDrawCanvas.width = container.clientWidth;
+        freeDrawCanvas.height = container.clientHeight;
+      }
+    }
+    window.addEventListener("resize", updateCanvasSize);
+
+    // Toggle free draw mode
+    document.getElementById("toggle-free-draw").addEventListener("click", function() {
+      freeDrawMode = !freeDrawMode;
+      this.textContent = "Free Draw: " + (freeDrawMode ? "On" : "Off");
+      initFreeDrawCanvas();
+      // Enable pointer events on canvas only if free draw is active
+      freeDrawCanvas.style.pointerEvents = freeDrawMode ? "auto" : "none";
+    });
+
+    // Toggle eraser mode and increase the eraser line width to 15px
+    document.getElementById("toggle-eraser").addEventListener("click", function() {
+      eraserMode = !eraserMode;
+      this.textContent = "Eraser: " + (eraserMode ? "On" : "Off");
+      if (ctx) {
+        ctx.globalCompositeOperation = eraserMode ? "destination-out" : "source-over";
+        ctx.lineWidth = eraserMode ? 15 : 2; // Increased eraser size when active
+        if (!eraserMode) {
+          ctx.strokeStyle = document.getElementById("draw-color").value;
+        }
+      }
+    });
+
+    // Update drawing color when selected (if not in eraser mode)
+    document.getElementById("draw-color").addEventListener("change", function() {
+      if (ctx && !eraserMode) {
+        ctx.strokeStyle = this.value;
+      }
+    });
+
+    // Free drawing event handlers
+    function startDrawing(e) {
+      isDrawing = true;
+      const rect = freeDrawCanvas.getBoundingClientRect();
+      lastX = e.clientX - rect.left;
+      lastY = e.clientY - rect.top;
+    }
+    function draw(e) {
+      if (!isDrawing) return;
+      const rect = freeDrawCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      lastX = x;
+      lastY = y;
+    }
+    function stopDrawing() {
+      isDrawing = false;
+    }
+    
+    // Attach free drawing listeners to the container (active on the freeDrawCanvas)
+    container.addEventListener("mousedown", function(e) {
+      if (freeDrawMode && e.target === freeDrawCanvas) {
+        startDrawing(e);
+      }
+    });
+    container.addEventListener("mousemove", function(e) {
+      if (freeDrawMode && isDrawing && e.target === freeDrawCanvas) {
+        draw(e);
+      }
+    });
+    container.addEventListener("mouseup", function() {
+      if (freeDrawMode) stopDrawing();
+    });
+    container.addEventListener("mouseleave", function() {
+      if (freeDrawMode) stopDrawing();
+    });
+
+    // Initialize jsPlumb and set container
+    jsPlumb.ready(function() {
+      jsPlumb.setContainer("flowchart-container");
+
+      const commonEndpointOptions = {
+        endpoint: "Dot",
+        paintStyle: { fill: "#fff", radius: 7 },
+        isSource: true,
+        isTarget: true,
+        connector: ["Flowchart", { cornerRadius: 5 }],
+        connectorStyle: { stroke: "#fff", strokeWidth: 2 },
+        maxConnections: -1
+      };
+
+      // Function to create a new node with a given label/type
+      function createNode(type) {
+        nodeCounter++;
+        const nodeId = "node_" + nodeCounter;
+        const nodeDiv = document.createElement("div");
+        nodeDiv.classList.add("node");
+        nodeDiv.id = nodeId;
+        nodeDiv.innerHTML = '<span class="node-label">' + type + '</span>';
+        nodeDiv.style.left = Math.random() * (container.clientWidth - 150) + "px";
+        nodeDiv.style.top = Math.random() * (container.clientHeight - 50) + "px";
+        container.appendChild(nodeDiv);
+        jsPlumb.draggable(nodeDiv, { containment: "parent" });
+        jsPlumb.addEndpoint(nodeDiv, { anchors: "TopCenter" }, commonEndpointOptions);
+        jsPlumb.addEndpoint(nodeDiv, { anchors: "BottomCenter" }, commonEndpointOptions);
+        jsPlumb.addEndpoint(nodeDiv, { anchors: "LeftMiddle" }, commonEndpointOptions);
+        jsPlumb.addEndpoint(nodeDiv, { anchors: "RightMiddle" }, commonEndpointOptions);
+
+        // Allow label editing on double-click
+        nodeDiv.addEventListener("dblclick", function() {
+          const currentLabel = nodeDiv.querySelector(".node-label").textContent;
+          let newLabel = prompt("Enter new label:", currentLabel);
+          if(newLabel !== null) {
+            nodeDiv.querySelector(".node-label").textContent = newLabel;
+          }
+        });
+      }
+
+      // Event listeners for node-adding buttons
+      document.getElementById("add-supplier").addEventListener("click", function() {
+        createNode("Supplier");
+      });
+      document.getElementById("add-warehouse").addEventListener("click", function() {
+        createNode("Warehouse");
+      });
+      document.getElementById("add-distribution").addEventListener("click", function() {
+        createNode("Distribution");
+      });
+      document.getElementById("add-retail").addEventListener("click", function() {
+        createNode("Retail");
+      });
+      document.getElementById("add-transport").addEventListener("click", function() {
+        createNode("Transport");
+      });
+
+      // Clear chart: remove all nodes and their endpoints and clear sketches
+      document.getElementById("clear-flowchart").addEventListener("click", function() {
+        // Clear all jsPlumb endpoints and connections
+        jsPlumb.reset();
+        // Remove all children except the freeDrawCanvas from the container
+        [...container.children].forEach(child => {
+          if(child.id !== "freeDrawCanvas") {
+            container.removeChild(child);
+          }
+        });
+        // Clear any free-drawn sketches
+        if (freeDrawCanvas && ctx) {
+          ctx.clearRect(0, 0, freeDrawCanvas.width, freeDrawCanvas.height);
+        }
+        // Ensure the freeDrawCanvas doesn't block node interactions when free draw mode is off
+        if (freeDrawCanvas && !freeDrawMode) {
+          freeDrawCanvas.style.pointerEvents = "none";
+        }
+      });
+
+      // Save the flowchart (including sketches) as PNG using html2canvas
+      document.getElementById("save-png").addEventListener("click", function() {
+        html2canvas(container).then(function(canvas) {
+          const link = document.createElement("a");
+          link.download = "flowchart.png";
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        });
+      });
+
+      // Save the flowchart (including sketches) as PDF using jsPDF
+      document.getElementById("save-pdf").addEventListener("click", function() {
+        html2canvas(container).then(function(canvas) {
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jspdf.jsPDF("landscape");
+          const imgProps = pdf.getImageProperties(imgData);
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+          pdf.save("flowchart.pdf");
+        });
+      });
+    });
+  </script>
+</body>
+</html>
