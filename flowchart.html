@@ -108,6 +108,7 @@
     <button id="add-transport">Transport</button>
     
     <h2>Flow Options</h2>
+    <button id="undo-action">Undo Last Action</button>
     <button id="clear-flowchart">Clear Flowchart</button>
     
     <h2>Save on Device</h2>
@@ -135,6 +136,8 @@
     // Global variables for nodes and drawing
     let nodeCounter = 0;
     const container = document.getElementById("flowchart-container");
+    let undoStack = [];
+    let preDrawState; // stores free-draw canvas state before drawing
 
     // Free drawing variables
     let freeDrawMode = false;
@@ -186,7 +189,7 @@
       this.textContent = "Eraser: " + (eraserMode ? "On" : "Off");
       if (ctx) {
         ctx.globalCompositeOperation = eraserMode ? "destination-out" : "source-over";
-        ctx.lineWidth = eraserMode ? 15 : 2; // Increased eraser size when active
+        ctx.lineWidth = eraserMode ? 15 : 2;
         if (!eraserMode) {
           ctx.strokeStyle = document.getElementById("draw-color").value;
         }
@@ -206,6 +209,8 @@
       const rect = freeDrawCanvas.getBoundingClientRect();
       lastX = e.clientX - rect.left;
       lastY = e.clientY - rect.top;
+      // Save current canvas state before drawing for undo
+      preDrawState = ctx.getImageData(0, 0, freeDrawCanvas.width, freeDrawCanvas.height);
     }
     function draw(e) {
       if (!isDrawing) return;
@@ -220,6 +225,10 @@
       lastY = y;
     }
     function stopDrawing() {
+      if (isDrawing) {
+        // After finishing a stroke, push the pre-draw state as an undo action
+        undoStack.push({ type: "freeDraw", imageData: preDrawState });
+      }
       isDrawing = false;
     }
     
@@ -280,6 +289,8 @@
             nodeDiv.querySelector(".node-label").textContent = newLabel;
           }
         });
+        // Push node creation onto the undo stack
+        undoStack.push({ type: "node", element: nodeDiv });
       }
 
       // Event listeners for node-adding buttons
@@ -299,7 +310,25 @@
         createNode("Transport");
       });
 
-      // Clear chart: remove all nodes and their endpoints and clear sketches
+      // Undo button: revert the last action (node creation or free drawing stroke)
+      document.getElementById("undo-action").addEventListener("click", function() {
+        if (undoStack.length === 0) {
+          alert("Nothing to undo");
+          return;
+        }
+        const lastAction = undoStack.pop();
+        if (lastAction.type === "node") {
+          // Remove the node element using jsPlumb's remove method
+          jsPlumb.remove(lastAction.element);
+        } else if (lastAction.type === "freeDraw") {
+          // Restore the free draw canvas to the previous state
+          if (ctx && freeDrawCanvas) {
+            ctx.putImageData(lastAction.imageData, 0, 0);
+          }
+        }
+      });
+
+      // Clear chart: remove all nodes (and endpoints) and clear sketches
       document.getElementById("clear-flowchart").addEventListener("click", function() {
         // Clear all jsPlumb endpoints and connections
         jsPlumb.reset();
@@ -313,6 +342,8 @@
         if (freeDrawCanvas && ctx) {
           ctx.clearRect(0, 0, freeDrawCanvas.width, freeDrawCanvas.height);
         }
+        // Clear the undo stack as well
+        undoStack = [];
         // Ensure the freeDrawCanvas doesn't block node interactions when free draw mode is off
         if (freeDrawCanvas && !freeDrawMode) {
           freeDrawCanvas.style.pointerEvents = "none";
