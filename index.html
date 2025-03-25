@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Sanjar 2217400</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
   <style>
     html, body {
-      height: 100%;  /* Ensure the page uses full viewport height */
+      height: 100%;
       margin: 0;
       overflow: hidden; /* Disable global page scroll */
       background-color: black;
@@ -23,37 +26,47 @@
       pointer-events: none;
       animation: moveStar 3s linear forwards;
     }
-
     @keyframes moveStar {
-      from { opacity: 0; transform: scale(0.2); }
-      50% { opacity: 1; }
-      to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
+      from {
+        opacity: 0;
+        transform: scale(0.2);
+      }
+      50% {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(3);
+      }
     }
 
     .cursor-trail {
-      position: fixed; /* Changed to 'fixed' for fixed positioning relative to the viewport */
+      position: fixed;
       width: 18px;
       height: 18px;
       background-color: rgba(209, 213, 219, 0.5);
       border-radius: 50%;
       pointer-events: none;
-      box-shadow: 0 0 15px rgba(209, 213, 219, 0.7); /* Enhanced shadow for smoother appearance */
+      box-shadow: 0 0 15px rgba(209, 213, 219, 0.7);
       animation: fadeOut 1.5s linear forwards;
-      z-index: 1000; /* Ensure it's above other content */
-      transform: scale(0.8); /* Slightly smaller scale for a more natural effect */
-      opacity: 0.8; /* Slight opacity adjustment to blend better */
+      z-index: 1000;
+      transform: scale(0.8);
+      opacity: 0.8;
     }
-
     @keyframes fadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; transform: scale(1.5); }
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+        transform: scale(1.5);
+      }
     }
 
     .button {
       border: 1px solid rgba(255, 255, 255, 0.02);
       transition: transform 0.4s ease-in-out, border-color 0.4s ease-in-out;
     }
-
     .button:hover {
       transform: scale(1.1);
       border-color: rgba(255, 255, 255, 0.1);
@@ -61,33 +74,30 @@
 
     /* Container for assignment buttons */
     .assignment-container {
-      width: 70%; /* 70% width of the page */
-      max-height: 400px; /* Limit the height */
-      overflow-y: auto; /* Keep the scroll functionality for the assignment container */
-      margin: 0 auto; /* Center align the container */
-      padding-top: 0; /* Remove top padding */
+      width: 70%;
+      max-height: 400px;
+      overflow-y: auto; /* Keep vertical scroll for assignments */
+      margin: 0 auto;   /* Center align */
       padding: 20px;
-      background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent background */
-      border-radius: 10px; /* Rounded corners */
-      overflow-x: hidden; /* Prevent horizontal scroll */
+      background-color: rgba(0, 0, 0, 0.8);
+      border-radius: 10px;
+      overflow-x: hidden;
     }
 
-    /* Custom scrollbar styles for dark theme */
+    /* Custom scrollbar styles (dark theme) */
     .assignment-container::-webkit-scrollbar {
-      width: 10px; /* Set the width of the scrollbar */
+      width: 10px;
     }
-
     .assignment-container::-webkit-scrollbar-thumb {
-      background-color: #333; /* Dark grey scrollbar */
+      background-color: #333;
       border-radius: 5px;
     }
-
     .assignment-container::-webkit-scrollbar-track {
-      background-color: black; /* Track color */
+      background-color: black;
     }
-
   </style>
 </head>
+
 <body class="flex flex-col items-center justify-center overflow-x-hidden overflow-y-hidden relative min-h-screen">
   <div class="absolute top-5 right-5 text-right text-gray-300">
     <p class="text-xl font-light">Sanjar</p>
@@ -96,75 +106,119 @@
   
   <!-- Scrollable container for assignment buttons -->
   <div class="assignment-container">
-    <div class="flex flex-col space-y-6 text-center mt-0"> <!-- Remove margin-top here to align the first button with the top -->
-      <a href="https://drive.google.com/file/d/132q5axnJOuFk90DcO1Ya2DZPQt2dDwIp/view?usp=drivesdk" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Dr. Martens</a>
-      <a href="flowchart.html" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Flowchart</a>
-      <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 3</a>
-      <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 4</a>
-      <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 5</a>
-    </div>
+    <!-- We'll dynamically inject assignment links here via JavaScript -->
+    <div id="assignment-links" class="flex flex-col space-y-6 text-center mt-0"></div>
   </div>
 
   <!-- Footer with non-scrolling buttons -->
   <div class="flex justify-center mt-12 mb-6 space-x-8 text-center">
-    <a href="currentgrade.html" class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg">Current Grade</a>
-    <a href="notes.html" class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg">Notes</a>
-    <a href="feedback.html" class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg">Leave Feedback</a>
+    <a
+      href="currentgrade.html"
+      class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg"
+      >Current Grade</a
+    >
+    <a
+      href="notes.html"
+      class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg"
+      >Notes</a
+    >
+    <a
+      href="feedback.html"
+      class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg"
+      >Leave Feedback</a
+    >
   </div>
 
+  <!-- Cursor trail logic -->
   <script>
-    document.addEventListener('mousemove', (e) => {
-      const trail = document.createElement('div');
-      trail.className = 'cursor-trail';
-
-      // Position fixed to the viewport, no need for scroll adjustments
+    document.addEventListener("mousemove", (e) => {
+      const trail = document.createElement("div");
+      trail.className = "cursor-trail";
       trail.style.left = `${e.pageX}px`;
-      trail.style.top = `${e.pageY}px`;  // Trail moves with the cursor
-
+      trail.style.top = `${e.pageY}px`;
       document.body.appendChild(trail);
-      setTimeout(() => trail.remove(), 1500);  // Trail disappears after a short duration
+      setTimeout(() => trail.remove(), 1500);
     });
 
-    let lastX = 0, lastY = 0;
-    document.addEventListener('mousemove', (e) => {
+    let lastX = 0,
+      lastY = 0;
+    document.addEventListener("mousemove", (e) => {
       const dx = Math.abs(e.pageX - lastX);
       const dy = Math.abs(e.pageY - lastY);
       if (dx > 1 || dy > 1) {
         lastX = e.pageX;
         lastY = e.pageY;
-        const trail = document.createElement('div');
-        trail.className = 'cursor-trail';
-
-        // Position fixed to the viewport, no need for scroll adjustments
+        const trail = document.createElement("div");
+        trail.className = "cursor-trail";
         trail.style.left = `${e.pageX}px`;
-        trail.style.top = `${e.pageY}px`;  // Trail moves with the cursor
-
+        trail.style.top = `${e.pageY}px`;
         document.body.appendChild(trail);
-        setTimeout(() => trail.remove(), 1500);  // Trail disappears after a short duration
+        setTimeout(() => trail.remove(), 1500);
       }
     });
   </script>
 
+  <!-- Star animation logic -->
   <script>
     setInterval(() => {
       for (let i = 0; i < 15; i++) {
-        const star = document.createElement('div');
-        star.className = 'star';
+        const star = document.createElement("div");
+        star.className = "star";
         const size = Math.random() * 2 + 1;
-        star.style.width = size + 'px';
-        star.style.height = size + 'px';
+        star.style.width = size + "px";
+        star.style.height = size + "px";
         const x = Math.random() * window.innerWidth;
         const y = Math.random() * window.innerHeight;
-        star.style.left = x + 'px';
-        star.style.top = y + 'px';
+        star.style.left = x + "px";
+        star.style.top = y + "px";
         const dx = (x - window.innerWidth / 2) * 5;
         const dy = (y - window.innerHeight / 2) * 5;
-        star.style.setProperty('--dx', dx + 'px');
-        star.style.setProperty('--dy', dy + 'px');
+        star.style.setProperty("--dx", dx + "px");
+        star.style.setProperty("--dy", dy + "px");
         document.body.appendChild(star);
         setTimeout(() => star.remove(), 3000);
       }
     }, 100);
+  </script>
+
+  <!-- Fetch assignment data from Google Apps Script -->
+  <script>
+    // Your deployed web app URL (ends with /exec)
+    const scriptUrl =
+      "https://script.google.com/macros/s/AKfycbxxoAsi7fpq0pZUmvW-b9hQglD9IYzNTdxElT1gzRd4-I9V6ZCa-rRvrc-UQIkMb_bFAw/exec";
+
+    // On page load, fetch the assignments and populate the container
+    window.addEventListener("DOMContentLoaded", () => {
+      fetch(scriptUrl)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
+          }
+          return response.json();
+        })
+        .then((assignments) => {
+          // assignments is an array: [{ name: "...", url: "..." }, ...]
+          const container = document.getElementById("assignment-links");
+          container.innerHTML = ""; // Clear any existing content
+
+          assignments.forEach((item) => {
+            // Create a link for each assignment
+            const link = document.createElement("a");
+            link.href = item.url;
+            link.textContent = item.name;
+            link.target = "_blank"; // (Optional) Open in new tab if desired
+            // Preserve your original button styles:
+            link.className =
+              "button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl";
+            
+            // Append each link into the container
+            container.appendChild(link);
+          });
+        })
+        .catch((error) => {
+          console.error("Error fetching assignments:", error);
+        });
+    });
   </script>
 </body>
 </html>
