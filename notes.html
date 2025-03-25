@@ -12,25 +12,38 @@
     body, html {
       height: 100%;
       margin: 0;
-      overflow-x: hidden;
+      overflow: hidden; /* Disable body scroll */
       background-color: black;
       font-family: 'Poppins', sans-serif;
       color: #f3f4f6;
     }
+
+    /* Full-page scrollable container */
+    .page-container {
+      height: 100%; /* Full height of the viewport */
+      overflow-y: auto; /* Enable vertical scrolling */
+      padding: 20px;
+      background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent background */
+      position: absolute; /* Ensure it covers the full page */
+      width: 100%; /* Ensure it takes full width */
+    }
+
     /* Container for notes content */
     .notes-container {
-      max-width: 800px;
-      margin: 80px auto;
+      max-width: 100%; /* Take full width of container */
       padding: 20px;
     }
+
     /* Center titles (assumed as h1) and add spacing */
     .notes-container h1 {
       text-align: center;
       margin-bottom: 1em;
     }
+
     .notes-container p {
       margin-bottom: 1em;
     }
+
     /* Background Stars Animation */
     .star {
       position: absolute;
@@ -39,11 +52,13 @@
       pointer-events: none;
       animation: moveStar 3s linear forwards;
     }
+
     @keyframes moveStar {
       from { opacity: 0; transform: scale(0.2); }
       50% { opacity: 1; }
       to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
     }
+
     /* Cursor Trail Effect */
     .cursor-trail {
       position: fixed;
@@ -58,16 +73,44 @@
       transform: scale(0.8);
       opacity: 0.8;
     }
+
     @keyframes fadeOut {
       from { opacity: 1; }
       to { opacity: 0; transform: scale(1.5); }
     }
+
+    /* Prevent breaking words */
+    #notesContent {
+      word-wrap: break-word; /* Prevent horizontal overflow */
+      word-break: break-word; /* Ensure words break correctly without mid-word breaks */
+      white-space: pre-wrap; /* Handle continuous letters and long text properly */
+      width: 100%; /* Ensure it respects container boundaries */
+      overflow-wrap: break-word; /* Ensures word breaks */
+    }
+
+    /* Custom scrollbar styles for dark theme */
+    .page-container::-webkit-scrollbar {
+      width: 10px; /* Set the width of the scrollbar */
+    }
+
+    .page-container::-webkit-scrollbar-thumb {
+      background-color: #333; /* Dark grey scrollbar */
+      border-radius: 5px;
+    }
+
+    .page-container::-webkit-scrollbar-track {
+      background-color: black; /* Track color */
+    }
+
   </style>
 </head>
-<body class="overflow-x-hidden overflow-y-auto relative">
-  <!-- Container for fetched notes -->
-  <div class="notes-container">
-    <div id="notesContent" class="text-lg leading-relaxed"></div>
+<body>
+  <!-- Full page container with scrollable content -->
+  <div class="page-container">
+    <!-- Container for fetched notes -->
+    <div class="notes-container">
+      <div id="notesContent" class="text-lg leading-relaxed"></div>
+    </div>
   </div>
 
   <!-- Background Stars Animation -->
