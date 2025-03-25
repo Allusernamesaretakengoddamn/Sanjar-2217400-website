@@ -59,6 +59,7 @@
       margin-top: -25px;
       margin-left: -25px;
       visibility: hidden; /* Initially hidden */
+      z-index: 10; /* Make sure it's on top */
     }
 
     /* Heartbeat animation for the loading circle */
@@ -66,17 +67,55 @@
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.2); } /* Expand the circle */
     }
+
+    /* Scrollable container for feedback */
+    #feedbackContainer {
+      max-height: 400px; /* Limit the height */
+      overflow-y: auto; /* Enable vertical scrolling */
+      width: 100%;
+    }
+
+    /* Feedback text handling */
+    #feedbackList div {
+      word-wrap: break-word; /* Prevent horizontal overflow */
+      word-break: break-word; /* Ensure words break correctly without mid-word breaks */
+      white-space: pre-wrap; /* Handles continuous letters and long text properly */
+      width: 100%; /* Ensure feedback respects the container boundaries */
+      overflow-wrap: break-word; /* Ensures word breaks */
+    }
+
+    /* Custom scrollbar styles */
+    #feedbackContainer::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    #feedbackContainer::-webkit-scrollbar-thumb {
+      background-color: #333; /* Dark grey scrollbar */
+      border-radius: 5px;
+    }
+
+    #feedbackContainer::-webkit-scrollbar-track {
+      background-color: black; /* Track color */
+    }
   </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen relative text-gray-100">
   <h1 class="text-3xl font-medium mb-6">Leave Feedback</h1>
-  <textarea id="feedbackInput" class="w-3/4 h-32 p-4 text-lg text-black" placeholder="Write your feedback here..."></textarea>
-  <button onclick="submitFeedback()" class="mt-4 px-6 py-2 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100">Submit</button>
-  <div class="w-3/4 mt-6 text-left" id="feedbackList"></div>
-  <a href="index.html" class="mt-8 text-lg underline">Back to Home</a>
 
-  <!-- Loading Icon (steam-like circle) -->
-  <div id="loadingIcon" class="loading-icon"></div>
+  <!-- Textarea with loading icon on top -->
+  <div class="relative w-3/4 h-32">
+    <textarea id="feedbackInput" class="w-full h-full p-4 text-lg text-black" placeholder="Write your feedback here..."></textarea>
+    <div id="loadingIcon" class="loading-icon"></div> <!-- Loading icon positioned above the textarea -->
+  </div>
+
+  <button onclick="submitFeedback()" class="mt-4 px-6 py-2 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100">Submit</button>
+
+  <!-- Scrollable feedback container -->
+  <div class="w-3/4 mt-6 text-left" id="feedbackContainer">
+    <div id="feedbackList"></div>
+  </div>
+
+  <a href="index.html" class="mt-8 text-lg underline">Back to Home</a>
 
   <script>
     // Replace with your Google Apps Script URL
@@ -123,7 +162,7 @@
           data.forEach((feedback, index) => {
             const div = document.createElement('div');
             div.className = 'p-4 bg-gray-800 bg-opacity-50 rounded-xl mt-2 flex justify-between items-center';
-            div.innerHTML = `
+            div.innerHTML = ` 
               <span>${feedback.timestamp}: ${feedback.feedback}</span>
             `;
             feedbackContainer.appendChild(div);
