@@ -1,5 +1,4 @@
-
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,10 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    body, html {
-      height: 100%;
+    html, body {
+      height: 100%;  /* Ensure the page uses full viewport height */
       margin: 0;
-      overflow-x: hidden;
+      overflow: hidden; /* Disable global page scroll */
       background-color: black;
       font-family: 'Poppins', sans-serif;
     }
@@ -59,22 +58,54 @@
       transform: scale(1.1);
       border-color: rgba(255, 255, 255, 0.1);
     }
+
+    /* Container for assignment buttons */
+    .assignment-container {
+      width: 70%; /* 70% width of the page */
+      max-height: 400px; /* Limit the height */
+      overflow-y: auto; /* Keep the scroll functionality for the assignment container */
+      margin: 0 auto; /* Center align the container */
+      padding-top: 0; /* Remove top padding */
+      padding: 20px;
+      background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent background */
+      border-radius: 10px; /* Rounded corners */
+      overflow-x: hidden; /* Prevent horizontal scroll */
+    }
+
+    /* Custom scrollbar styles for dark theme */
+    .assignment-container::-webkit-scrollbar {
+      width: 10px; /* Set the width of the scrollbar */
+    }
+
+    .assignment-container::-webkit-scrollbar-thumb {
+      background-color: #333; /* Dark grey scrollbar */
+      border-radius: 5px;
+    }
+
+    .assignment-container::-webkit-scrollbar-track {
+      background-color: black; /* Track color */
+    }
+
   </style>
 </head>
-<body class="flex flex-col items-center justify-center overflow-x-hidden overflow-y-auto relative min-h-screen">
+<body class="flex flex-col items-center justify-center overflow-x-hidden overflow-y-hidden relative min-h-screen">
   <div class="absolute top-5 right-5 text-right text-gray-300">
     <p class="text-xl font-light">Sanjar</p>
     <p class="text-lg tracking-wide font-light">2217400</p>
   </div>
   
-  <div class="flex flex-col space-y-6 text-center mt-16">
-    <a href="https://drive.google.com/file/d/132q5axnJOuFk90DcO1Ya2DZPQt2dDwIp/view?usp=drivesdk" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Dr. Martens</a>
-    <a href="flowchart.html" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Flowchart</a>
-    <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 3</a>
-    <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 4</a>
-    <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 5</a>
+  <!-- Scrollable container for assignment buttons -->
+  <div class="assignment-container">
+    <div class="flex flex-col space-y-6 text-center mt-0"> <!-- Remove margin-top here to align the first button with the top -->
+      <a href="https://drive.google.com/file/d/132q5axnJOuFk90DcO1Ya2DZPQt2dDwIp/view?usp=drivesdk" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Dr. Martens</a>
+      <a href="flowchart.html" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Flowchart</a>
+      <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 3</a>
+      <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 4</a>
+      <a href="#" class="button px-16 py-6 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-2xl">Assignment 5</a>
+    </div>
   </div>
 
+  <!-- Footer with non-scrolling buttons -->
   <div class="flex justify-center mt-12 mb-6 space-x-8 text-center">
     <a href="currentgrade.html" class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg">Current Grade</a>
     <a href="notes.html" class="button px-10 py-4 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100 transform font-medium text-lg">Notes</a>
