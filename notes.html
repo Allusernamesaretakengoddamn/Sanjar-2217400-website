@@ -1,50 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Notes</title>
+  <!-- Tailwind + Google Font, same as original -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  />
   <style>
-    /* Basic Page Settings */
-    body, html {
+    /* Lock the entire page, no scrolling on the page */
+    html, body {
       height: 100%;
       margin: 0;
-      overflow: hidden; /* Disable body scroll */
+      overflow: hidden;
       background-color: black;
       font-family: 'Poppins', sans-serif;
       color: #f3f4f6;
     }
 
-    /* Full-page scrollable container */
-    .page-container {
-      height: 100%; /* Full height of the viewport */
-      overflow-y: auto; /* Enable vertical scrolling */
-      padding: 20px;
-      background-color: rgba(0, 0, 0, 0.8); /* Slightly transparent background */
-      position: absolute; /* Ensure it covers the full page */
-      width: 100%; /* Ensure it takes full width */
+    /* Main wrapper remains static, no scroll */
+    .wrapper {
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
     }
 
-    /* Container for notes content */
-    .notes-container {
-      max-width: 100%; /* Take full width of container */
-      padding: 20px;
+    /* Scrollable container for notes, but with zero top padding */
+    .notes-scroll {
+      max-height: 70vh;
+      width: 90%;
+      padding: 0 20px 20px; /* 0 top padding, keep 20px left/right/bottom */
+      background-color: rgba(0, 0, 0, 0.8);
+      overflow-y: auto;
+    }
+    .notes-scroll::-webkit-scrollbar {
+      width: 10px;
+    }
+    .notes-scroll::-webkit-scrollbar-thumb {
+      background-color: #333;
+      border-radius: 5px;
+    }
+    .notes-scroll::-webkit-scrollbar-track {
+      background-color: black;
     }
 
-    /* Center titles (assumed as h1) and add spacing */
-    .notes-container h1 {
+    /* Headings: bigger font, center, remove top margin on the first one */
+    #notesContent h1,
+    #notesContent h2,
+    #notesContent h3 {
       text-align: center;
+      font-size: 2em; /* Make headers clearly bigger than body text */
+      margin-top: 1em;
       margin-bottom: 1em;
     }
 
-    .notes-container p {
-      margin-bottom: 1em;
+    /* Paragraphs: 1em below each, but truly empty gets 2em */
+    #notesContent p {
+      margin-top: 0;      /* no forced top margin */
+      margin-bottom: 1em; /* 1 blank line below normal paragraphs */
+    }
+    #notesContent p:empty {
+      display: block;
+      margin-bottom: 2em; /* 2 lines of space for empty paragraphs */
     }
 
-    /* Background Stars Animation */
+    /*
+      Make sure the very first block (heading/paragraph) starts at the top:
+      If the first child had margin-top, remove it.
+    */
+    #notesContent > *:first-child {
+      margin-top: 0 !important;
+    }
+
+    /* Star effect EXACTLY as you had originally */
     .star {
       position: absolute;
       background-color: white;
@@ -52,14 +88,13 @@
       pointer-events: none;
       animation: moveStar 3s linear forwards;
     }
-
     @keyframes moveStar {
       from { opacity: 0; transform: scale(0.2); }
       50% { opacity: 1; }
       to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
     }
 
-    /* Cursor Trail Effect */
+    /* Cursor trail EXACTLY as you had originally */
     .cursor-trail {
       position: fixed;
       width: 18px;
@@ -73,47 +108,27 @@
       transform: scale(0.8);
       opacity: 0.8;
     }
-
     @keyframes fadeOut {
       from { opacity: 1; }
       to { opacity: 0; transform: scale(1.5); }
     }
-
-    /* Prevent breaking words */
-    #notesContent {
-      word-wrap: break-word; /* Prevent horizontal overflow */
-      word-break: break-word; /* Ensure words break correctly without mid-word breaks */
-      white-space: pre-wrap; /* Handle continuous letters and long text properly */
-      width: 100%; /* Ensure it respects container boundaries */
-      overflow-wrap: break-word; /* Ensures word breaks */
-    }
-
-    /* Custom scrollbar styles for dark theme */
-    .page-container::-webkit-scrollbar {
-      width: 10px; /* Set the width of the scrollbar */
-    }
-
-    .page-container::-webkit-scrollbar-thumb {
-      background-color: #333; /* Dark grey scrollbar */
-      border-radius: 5px;
-    }
-
-    .page-container::-webkit-scrollbar-track {
-      background-color: black; /* Track color */
-    }
-
   </style>
 </head>
 <body>
-  <!-- Full page container with scrollable content -->
-  <div class="page-container">
-    <!-- Container for fetched notes -->
-    <div class="notes-container">
-      <div id="notesContent" class="text-lg leading-relaxed"></div>
+  <div class="wrapper">
+    <div class="notes-scroll">
+      <div id="notesContent"></div>
+    </div>
+
+    <!-- Back to Home link (unchanged) -->
+    <div class="mt-6">
+      <a href="index.html" class="text-lg underline">
+        Back to Home
+      </a>
     </div>
   </div>
 
-  <!-- Background Stars Animation -->
+  <!-- Same star script, no changes -->
   <script>
     setInterval(() => {
       for (let i = 0; i < 15; i++) {
@@ -136,7 +151,7 @@
     }, 100);
   </script>
 
-  <!-- Cursor Trail Effect -->
+  <!-- Same cursor trail script, no changes -->
   <script>
     document.addEventListener('mousemove', (e) => {
       const trail = document.createElement('div');
@@ -148,15 +163,29 @@
     });
   </script>
 
-  <!-- Fetch and Insert Formatted HTML from Google Docs via Apps Script -->
+  <!-- Fetch notes, strip inline styles, convert paragraphs with only spaces or &nbsp; to truly empty -->
   <script>
     fetch("https://script.google.com/macros/s/AKfycbxZLHcNaU3W4afi47zcP8N6SJUDdvFGDL6AChASCPzDXvh2NyRIfielOngxl1cQ8MwrBw/exec?action=getNotes")
       .then(response => response.text())
       .then(rawHtml => {
-         const parser = new DOMParser();
-         const doc = parser.parseFromString(rawHtml, "text/html");
-         let content = doc.body ? doc.body.innerHTML : rawHtml;
-         document.getElementById("notesContent").innerHTML = content;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(rawHtml, "text/html");
+
+        // 1) Remove inline styles
+        doc.querySelectorAll('[style]').forEach(el => el.removeAttribute('style'));
+
+        // 2) Convert paragraphs that contain only whitespace or &nbsp; into truly empty <p></p>.
+        doc.querySelectorAll('p').forEach(p => {
+          const trimmedText = p.textContent.replace(/\u00A0/g, '').trim(); 
+          // remove &nbsp; (char code A0) and whitespace
+          if (!trimmedText) {
+            p.innerHTML = ''; // ensure it's truly empty
+          }
+        });
+
+        // 3) Put the cleaned HTML into #notesContent
+        const content = doc.body ? doc.body.innerHTML : rawHtml;
+        document.getElementById("notesContent").innerHTML = content;
       })
       .catch(error => console.error("Error fetching notes:", error));
   </script>
