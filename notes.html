@@ -52,38 +52,35 @@
       background-color: black;
     }
 
-    /* Headings: bigger font, center, remove top margin on the first one */
+    /* 
+      Make the headings for fetched text smaller than the
+      big "Notes" header but bigger than normal text:
+    */
     #notesContent h1,
     #notesContent h2,
     #notesContent h3 {
       text-align: center;
-      font-size: 2em; /* Make headers clearly bigger than body text */
+      font-size: 1.5em; /* Adjusted from 2em to 1.5em */
       margin-top: 1em;
       margin-bottom: 1em;
     }
 
     /* Paragraphs: 1em below each, but truly empty gets 2em */
     #notesContent p {
-      margin-top: 0;      /* no forced top margin */
-      margin-bottom: 1em; /* 1 blank line below normal paragraphs */
+      margin-top: 0;
+      margin-bottom: 1em;
     }
     #notesContent p:empty {
       display: block;
-      margin-bottom: 2em; /* 2 lines of space for empty paragraphs */
+      margin-bottom: 2em;
     }
 
-    /*
-      Make sure the very first block (heading/paragraph) starts at the top:
-      If the first child had margin-top, remove it.
-    */
+    /* Remove top margin from the very first block */
     #notesContent > *:first-child {
       margin-top: 0 !important;
     }
 
-    /* 
-       Changed 'position: absolute;' to 'position: fixed;' 
-       to prevent page scrolling on mobile
-    */
+    /* Use fixed positioning for the stars to prevent page scrolling on mobile */
     .star {
       position: fixed; 
       background-color: white;
@@ -105,7 +102,7 @@
       }
     }
 
-    /* Cursor trail EXACTLY as you had originally */
+    /* Cursor trail identical to "Leave Feedback" code */
     .cursor-trail {
       position: fixed;
       width: 18px;
@@ -113,25 +110,20 @@
       background-color: rgba(209, 213, 219, 0.5);
       border-radius: 50%;
       pointer-events: none;
-      box-shadow: 0 0 15px rgba(209, 213, 219, 0.7);
+      box-shadow: 0 0 10px rgba(209, 213, 219, 0.5);
       animation: fadeOut 1.5s linear forwards;
-      z-index: 1000;
-      transform: scale(0.8);
-      opacity: 0.8;
     }
     @keyframes fadeOut {
-      from {
-        opacity: 1;
-      }
-      to {
-        opacity: 0;
-        transform: scale(1.5);
-      }
+      from { opacity: 1; }
+      to { opacity: 0; transform: scale(1.5); }
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
+    <!-- "Notes" header (unchanged) -->
+    <h1 class="text-3xl font-medium mb-6">Notes</h1>
+
     <div class="notes-scroll">
       <div id="notesContent"></div>
     </div>
@@ -144,7 +136,7 @@
     </div>
   </div>
 
-  <!-- Same star script, no changes -->
+  <!-- Same star script, no changes except position is fixed in CSS -->
   <script>
     setInterval(() => {
       for (let i = 0; i < 15; i++) {
@@ -167,7 +159,7 @@
     }, 100);
   </script>
 
-  <!-- Same cursor trail script, no changes -->
+  <!-- Cursor trail script, matching your "Leave Feedback" code -->
   <script>
     document.addEventListener('mousemove', (e) => {
       const trail = document.createElement('div');
