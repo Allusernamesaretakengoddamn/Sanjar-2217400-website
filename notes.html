@@ -80,18 +80,29 @@
       margin-top: 0 !important;
     }
 
-    /* Star effect EXACTLY as you had originally */
+    /* 
+       Changed 'position: absolute;' to 'position: fixed;' 
+       to prevent page scrolling on mobile
+    */
     .star {
-      position: absolute;
+      position: fixed; 
       background-color: white;
       border-radius: 50%;
       pointer-events: none;
       animation: moveStar 3s linear forwards;
     }
     @keyframes moveStar {
-      from { opacity: 0; transform: scale(0.2); }
-      50% { opacity: 1; }
-      to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
+      from {
+        opacity: 0;
+        transform: scale(0.2);
+      }
+      50% {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+        transform: translate(var(--dx), var(--dy)) scale(3);
+      }
     }
 
     /* Cursor trail EXACTLY as you had originally */
@@ -109,8 +120,13 @@
       opacity: 0.8;
     }
     @keyframes fadeOut {
-      from { opacity: 1; }
-      to { opacity: 0; transform: scale(1.5); }
+      from {
+        opacity: 1;
+      }
+      to {
+        opacity: 0;
+        transform: scale(1.5);
+      }
     }
   </style>
 </head>
@@ -177,7 +193,6 @@
         // 2) Convert paragraphs that contain only whitespace or &nbsp; into truly empty <p></p>.
         doc.querySelectorAll('p').forEach(p => {
           const trimmedText = p.textContent.replace(/\u00A0/g, '').trim(); 
-          // remove &nbsp; (char code A0) and whitespace
           if (!trimmedText) {
             p.innerHTML = ''; // ensure it's truly empty
           }
