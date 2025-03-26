@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Current Grade</title>
+  <!-- Tailwind & Fonts -->
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500&display=swap" rel="stylesheet">
+  
   <style>
     body, html {
       height: 100vh;
@@ -15,8 +17,7 @@
       font-family: 'Poppins', sans-serif;
       overflow: hidden;
     }
-
-    /* Changed from absolute to fixed */
+    
     .star {
       position: fixed;
       background-color: white;
@@ -24,14 +25,12 @@
       pointer-events: none;
       animation: moveStar 3s linear forwards;
     }
-
     @keyframes moveStar {
       from { opacity: 0; transform: scale(0.2); }
       50% { opacity: 1; }
       to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
     }
-
-    /* Changed from absolute to fixed */
+    
     .cursor-trail {
       position: fixed;
       width: 18px;
@@ -42,7 +41,6 @@
       box-shadow: 0 0 10px rgba(209, 213, 219, 0.5);
       animation: fadeOut 1.5s linear forwards;
     }
-
     @keyframes fadeOut {
       from { opacity: 1; }
       to { opacity: 0; transform: scale(1.5); }
@@ -51,13 +49,26 @@
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen relative text-gray-100">
   <h1 class="text-3xl font-medium mb-6">Current Grade</h1>
+  
   <div class="flex space-x-10">
-    <div contenteditable="true" class="text-6xl bg-gray-800 bg-opacity-50 px-8 py-4 rounded-xl cursor-pointer" id="grade1">12</div>
-    <div contenteditable="true" class="text-6xl bg-gray-800 bg-opacity-50 px-8 py-4 rounded-xl cursor-pointer" id="grade2">100%</div>
+    <!-- Left side: Number + label -->
+    <div class="flex flex-col items-center">
+      <!-- This value comes dynamically from your sheet -->
+      <div contenteditable="true" class="text-6xl bg-gray-800 bg-opacity-50 px-8 py-4 rounded-xl cursor-pointer" id="grade1"><?= points ?></div>
+      <div class="text-base mt-2">Points</div>
+    </div>
+    
+    <!-- Right side: Number + label -->
+    <div class="flex flex-col items-center">
+      <div contenteditable="true" class="text-6xl bg-gray-800 bg-opacity-50 px-8 py-4 rounded-xl cursor-pointer" id="grade2"><?= percentage ?></div>
+      <div class="text-base mt-2">Percentage</div>
+    </div>
   </div>
+  
   <a href="index.html" class="mt-8 text-lg underline">Back to Home</a>
-
+  
   <script>
+    // CURSOR TRAIL EFFECT
     document.addEventListener('mousemove', (e) => {
       const trail = document.createElement('div');
       trail.className = 'cursor-trail';
@@ -66,7 +77,8 @@
       document.body.appendChild(trail);
       setTimeout(() => trail.remove(), 1500);
     });
-
+    
+    // STAR ANIMATION EFFECT
     setInterval(() => {
       for (let i = 0; i < 15; i++) {
         const star = document.createElement('div');
