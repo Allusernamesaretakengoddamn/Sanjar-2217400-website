@@ -16,8 +16,9 @@
       overflow: hidden;
     }
 
+    /* Changed from absolute to fixed */
     .star {
-      position: absolute;
+      position: fixed; 
       background-color: white;
       border-radius: 50%;
       pointer-events: none;
@@ -30,8 +31,9 @@
       to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(3); }
     }
 
+    /* Changed from absolute to fixed */
     .cursor-trail {
-      position: absolute;
+      position: fixed;
       width: 18px;
       height: 18px;
       background-color: rgba(209, 213, 219, 0.5);
@@ -65,37 +67,35 @@
     /* Heartbeat animation for the loading circle */
     @keyframes heartbeat {
       0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.2); } /* Expand the circle */
+      50% { transform: scale(1.2); }
     }
 
     /* Scrollable container for feedback */
     #feedbackContainer {
-      max-height: 400px; /* Limit the height */
-      overflow-y: auto; /* Enable vertical scrolling */
+      max-height: 400px;
+      overflow-y: auto;
       width: 100%;
     }
 
     /* Feedback text handling */
     #feedbackList div {
-      word-wrap: break-word; /* Prevent horizontal overflow */
-      word-break: break-word; /* Ensure words break correctly without mid-word breaks */
-      white-space: pre-wrap; /* Handles continuous letters and long text properly */
-      width: 100%; /* Ensure feedback respects the container boundaries */
-      overflow-wrap: break-word; /* Ensures word breaks */
+      word-wrap: break-word;
+      word-break: break-word;
+      white-space: pre-wrap;
+      width: 100%;
+      overflow-wrap: break-word;
     }
 
     /* Custom scrollbar styles */
     #feedbackContainer::-webkit-scrollbar {
       width: 10px;
     }
-
     #feedbackContainer::-webkit-scrollbar-thumb {
-      background-color: #333; /* Dark grey scrollbar */
+      background-color: #333;
       border-radius: 5px;
     }
-
     #feedbackContainer::-webkit-scrollbar-track {
-      background-color: black; /* Track color */
+      background-color: black;
     }
   </style>
 </head>
@@ -105,10 +105,12 @@
   <!-- Textarea with loading icon on top -->
   <div class="relative w-3/4 h-32">
     <textarea id="feedbackInput" class="w-full h-full p-4 text-lg text-black" placeholder="Write your feedback here..."></textarea>
-    <div id="loadingIcon" class="loading-icon"></div> <!-- Loading icon positioned above the textarea -->
+    <div id="loadingIcon" class="loading-icon"></div>
   </div>
 
-  <button onclick="submitFeedback()" class="mt-4 px-6 py-2 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100">Submit</button>
+  <button onclick="submitFeedback()" class="mt-4 px-6 py-2 bg-gray-800 bg-opacity-50 rounded-xl text-gray-100">
+    Submit
+  </button>
 
   <!-- Scrollable feedback container -->
   <div class="w-3/4 mt-6 text-left" id="feedbackContainer">
@@ -125,30 +127,25 @@
     function submitFeedback() {
       const input = document.getElementById('feedbackInput');
       const feedback = input.value.trim();
-      const loadingIcon = document.getElementById('loadingIcon'); // Get the loading icon element
+      const loadingIcon = document.getElementById('loadingIcon');
 
       if (feedback === '') return;
-
-      // Show the loading icon
       loadingIcon.style.visibility = 'visible';
 
-      // Send feedback to Google Sheets via the Apps Script URL
       fetch(feedbackUrl, {
         method: 'POST',
-        body: new URLSearchParams({
-          feedback: feedback
-        })
+        body: new URLSearchParams({ feedback })
       })
       .then(response => response.text())
       .then(result => {
         console.log('Feedback submitted:', result);
-        input.value = ''; // Clear input after submission
-        displayFeedback(); // Refresh feedback list
-        loadingIcon.style.visibility = 'hidden'; // Hide the loading icon once done
+        input.value = '';
+        displayFeedback();
+        loadingIcon.style.visibility = 'hidden';
       })
       .catch(error => {
         console.error('Error submitting feedback:', error);
-        loadingIcon.style.visibility = 'hidden'; // Hide the loading icon on error
+        loadingIcon.style.visibility = 'hidden';
       });
     }
 
@@ -158,13 +155,11 @@
         .then(response => response.json())
         .then(data => {
           const feedbackContainer = document.getElementById('feedbackList');
-          feedbackContainer.innerHTML = ''; // Clear previous feedback
-          data.forEach((feedback, index) => {
+          feedbackContainer.innerHTML = '';
+          data.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'p-4 bg-gray-800 bg-opacity-50 rounded-xl mt-2 flex justify-between items-center';
-            div.innerHTML = ` 
-              <span>${feedback.timestamp}: ${feedback.feedback}</span>
-            `;
+            div.innerHTML = `<span>${item.timestamp}: ${item.feedback}</span>`;
             feedbackContainer.appendChild(div);
           });
         })
