@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Warehouse Route Game</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body{margin:0;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#87ceeb}
+
+  /*── scoreboard ──*/
+  #scoreboard{
+    position:fixed;top:12px;left:50%;transform:translateX(-50%);
+    font:bold 22px/1.2 "Segoe UI",Arial,sans-serif;color:#000;z-index:11;
+    padding:2px 12px;border-radius:6px;background:rgba(255,255,255,.6);
+    backdrop-filter:blur(6px)
+  }
+  #score{
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+    display:inline-block
+  }
+  #score.bump{transform:scale(1.35)}
+
+  /*── UI footer (no game title anymore) ──*/
+  #ui{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    display:flex;gap:14px;align-items:center;padding:6px 22px;
+    background:rgba(0,0,0,.55);color:#fff;font-size:14px;border-radius:8px;
+    backdrop-filter:blur(6px);z-index:10
+  }
+  #ui p{margin:0 12px 0 0}
+  button{padding:4px 10px;border:0;border-radius:4px;background:#2196f3;
+         color:#fff;font:bold 13px Arial;cursor:pointer}
+  button:hover{background:#1e88e5}
+
+  #tooltip{position:fixed;pointer-events:none;background:#212121;color:#fff;
+           padding:4px 6px;border-radius:4px;font-size:12px;opacity:0;
+           transition:opacity .15s;z-index:11;white-space:nowrap}
+  #msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+       font-size:48px;font-weight:bold;color:#ff5252;text-shadow:0 0 10px #000;
+       transition:transform .4s cubic-bezier(.68,-.55,.27,1.55);z-index:12}
+  #msg.show{transform:translate(-50%,-50%) scale(1)}
+</style>
+</head>
+<body>
+<div id="scoreboard">Score <span id="score">0</span></div>
+
+<div id="ui">
+  <p>Visit all warehouses in the <b>optimal order</b> (least gas).</p>
+  <p>Route: <span id="route"></span> | Gas: <span id="cost">0</span></p>
+  <button id="reset">Restart</button>
+</div>
+
+<div id="tooltip"></div><div id="msg">TRY AGAIN!</div>
+
+<script type="module">
+import * as THREE        from 'https://unpkg.com/three@0.160.0/build/three.module.js?module';
+import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js?module';
+import { Line2 }         from 'https://unpkg.com/three@0.160.0/examples/jsm/lines/Line2.js?module';
+import { LineMaterial }  from 'https://unpkg.com/three@0.160.0/examples/jsm/lines/LineMaterial.js?module';
+import { LineGeometry }  from 'https://unpkg.com/three@0.160.0/examples/jsm/lines/LineGeometry.js?module';
+
+/*──────── Scene basics ────────*/
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x87ceeb);
+scene.fog=new THREE.Fog(0x87ceeb,85,160);
+
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,1000);
+camera.position.set(0,22,38);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(devicePixelRatio);
+renderer.setSize(innerWidth,innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=.1;
+controls.target.set(0,9,0);
+
+/*──────── Lighting & skyline ────────*/
+scene.add(new THREE.AmbientLight(0xffffff,.35));
+const dl=new THREE.DirectionalLight(0xffffff,.9);
+dl.position.set(14,30,10);scene.add(dl);
+
+const skyline=new THREE.Group();
+for(let i=0;i<100;i++){
+  const w=2+Math.random()*4,d=2+Math.random()*4,h=8+Math.random()*27;
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
+    new THREE.MeshStandardMaterial({color:0x1a237e,flatShading:true}));
+  const ang=Math.random()*Math.PI*2,dist=70+Math.random()*20;
+  m.position.set(Math.cos(ang)*dist,h/2-1,Math.sin(ang)*dist);
+  skyline.add(m);
+}
+scene.add(skyline);
+
+/*──────── Map constants ────────*/
+const NODE_COUNT=6,
+      radius=15,
+      irregular=[1,.85,1.05,.92,1.18,.97],
+      EDGE_PENALTY=2.4;
+
+const positions=[],nodes=[],edges=[],
+      costs=Array.from({length:NODE_COUNT},()=>Array(NODE_COUNT).fill(0));
+
+const mapGroup=new THREE.Group();
+mapGroup.position.y=8;scene.add(mapGroup);
+const TRUCK_Y = mapGroup.position.y + 0.10;
+const onMap   = v => v.clone().add(mapGroup.position).setY(TRUCK_Y);
+
+/*──────── Warehouses ───────*/
+function warehouse(){
+  const g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(3,2,3),new THREE.MeshStandardMaterial({color:0x4caf50})));
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(2.6,1.4,4),new THREE.MeshStandardMaterial({color:0x795548}));
+  roof.position.y=1.7;roof.rotation.y=Math.PI/4;g.add(roof);
+  const gate=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.2,0.15),new THREE.MeshStandardMaterial({color:0x3e2723}));
+  gate.position.set(0,0.6,1.57);gate.userData={targetY:0.6};g.add(gate);g.userData.gate=gate;
+  return g;
+}
+for(let i=0;i<NODE_COUNT;i++){
+  const a=i/NODE_COUNT*Math.PI*2,rad=radius*irregular[i];
+  const p=new THREE.Vector3(rad*Math.cos(a),0,rad*Math.sin(a));
+  positions.push(p);
+  const w=warehouse();w.position.copy(p);w.userData.index=i;mapGroup.add(w);nodes.push(w);
+}
+
+/*──────── Edge costs ───────*/
+for(let i=0;i<NODE_COUNT;i++)
+  for(let j=i+1;j<NODE_COUNT;j++){
+    const len=positions[i].distanceTo(positions[j]);
+    const rim=j===(i+1)%NODE_COUNT;
+    costs[i][j]=costs[j][i]=len*(1+(Math.random()-0.5)*0.3)*(rim?EDGE_PENALTY:1);
+  }
+
+/*──────── Unique optimal route (non-trivial) ───────*/
+const key=(a,b)=>a<b?`${a}-${b}`:`${b}-${a}`;
+const perm=a=>a.length<=1?[a]:a.flatMap((v,i)=>perm([...a.slice(0,i),...a.slice(i+1)]).map(p=>[v,...p]));
+const cycleCost=c=>c.reduce((s,_,k)=>s+costs[c[k]][c[(k+1)%c.length]],0);
+
+function findUniqueOptimal(){
+  for(let attempts=0;attempts<200;attempts++){
+    const cycles=perm([1,2,3,4,5]).map(p=>[0,...p]);
+    let best=Infinity,bests=[];
+    cycles.forEach(c=>{
+      const cs=cycleCost(c);
+      if(cs<best-1e-6){best=cs;bests=[c]}
+      else if(Math.abs(cs-best)<1e-6)bests.push(c);
+    });
+    if(bests.length===1 && !isSimpleCircle(bests[0])) return bests[0];
+
+    /* nudge edges to force uniqueness */
+    const base=bests[0];
+    const ref=new Set(base.map((v,i)=>key(v,base[(i+1)%NODE_COUNT])));
+    const dup=bests[1];                         // pick another
+    for(let k=0;k<dup.length;k++){
+      const e=key(dup[k],dup[(k+1)%dup.length]);
+      if(!ref.has(e)){
+        costs[dup[k]][dup[(k+1)%dup.length]]+=0.1;
+        costs[dup[(k+1)%dup.length]][dup[k]]+=0.1;
+        break;
+      }
+    }
+  }
+  return [0,1,2,3,4,5];  // fallback (shouldn’t happen)
+}
+const OPT_ROUTE=findUniqueOptimal();
+const OPT_EDGES=new Set(OPT_ROUTE.map((v,i)=>key(v,OPT_ROUTE[(i+1)%NODE_COUNT])));
+
+/*──────── Gray road bars (quaternion aligned) ───────*/
+const roadMat=new THREE.MeshStandardMaterial({color:0x555555});
+const barWidth=0.35,barThickness=0.04;
+
+for(let i=0;i<NODE_COUNT;i++)
+ for(let j=i+1;j<NODE_COUNT;j++){
+   const a=positions[i],b=positions[j],dir=b.clone().sub(a),len=dir.length();
+   const bar=new THREE.Mesh(new THREE.BoxGeometry(len,barThickness,barWidth),roadMat);
+   bar.position.copy(a.clone().lerp(b,0.5)).setY(0.02);
+   bar.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),dir.normalize());
+   mapGroup.add(bar);
+
+   const pickGeo=new THREE.BufferGeometry().setFromPoints([a.clone().setY(0.02),b.clone().setY(0.02)]);
+   const pick=new THREE.Line(pickGeo,new THREE.LineBasicMaterial({transparent:true,opacity:0}));
+   pick.userData={i,j,gas:costs[i][j]};mapGroup.add(pick);edges.push(pick);
+ }
+
+/*──────── Truck model ───────*/
+function truckModel(){
+  const g=new THREE.Group();
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(2,1.3,1.8),new THREE.MeshStandardMaterial({color:0xef5350})));
+  const cab=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.1,1.8),new THREE.MeshStandardMaterial({color:0xffeb3b}));
+  cab.position.set(1,0.7,0);g.add(cab);
+  const wheelGeo=new THREE.CylinderGeometry(0.4,0.4,0.5,20),
+        wheelMat=new THREE.MeshStandardMaterial({color:0x333});
+  [-0.8,0.8].forEach(z=>[-0.8,0.8].forEach(x=>{
+    const w=new THREE.Mesh(wheelGeo,wheelMat);w.rotation.z=Math.PI/2;
+    w.position.set(x,0.3,z);g.add(w);
+  }));
+  return g;
+}
+
+/*──────── UI refs & state ───────*/
+const scoreEl=document.getElementById('score'),
+      routeEl=document.getElementById('route'),
+      costEl=document.getElementById('cost'),
+      tooltip=document.getElementById('tooltip'),
+      msg=document.getElementById('msg');
+
+let route=[],gas=0,closed=false;
+let truck=null,move=null,currentWH=-1;
+let score=0,nextIndex=0;      // progress along OPT_ROUTE
+
+function bumpScore(){
+  score++;scoreEl.textContent=score;
+  scoreEl.classList.add('bump');
+  setTimeout(()=>scoreEl.classList.remove('bump'),250);
+}
+
+/*──────── Helper: tint warehouses & gates ───────*/
+const tint=(i,c)=>nodes[i].children.forEach(o=>o.material?.color.set(c));
+function setGate(i,open){
+  const g=nodes[i].userData.gate;
+  g.material.color.set(open?0x8d6e63:0x3e2723);
+  g.userData.targetY=open?2.0:0.6;
+}
+
+/*──────── Move truck helper ───────*/
+const SPEED=25;
+function moveTruck(a,b){
+  move={from:onMap(positions[a]),to:onMap(positions[b]),
+        dur:positions[a].distanceTo(positions[b])/SPEED,el:0,dest:b};
+  truck.position.copy(move.from);
+}
+
+/*──────── Scoring logic: only advance in optimal order ───────*/
+function addNode(i){
+  if(route.length){
+    const prev=route.at(-1);
+    gas+=costs[prev][i];costEl.textContent=gas.toFixed(2);
+    moveTruck(prev,i);
+
+    /* check if player followed the next optimal step */
+    if(i===OPT_ROUTE[(nextIndex+1)%NODE_COUNT]){
+      nextIndex++;
+      bumpScore();
+    }
+  }else{
+    /* first node must be the OPT_ROUTE[0] (always 0) for scoring to start */
+    nextIndex=0;
+  }
+
+  route.push(i);
+  routeEl.textContent=route.join(' ➜ ');
+  tint(i,0xffc107);
+}
+
+/*──────── Hover overlay (unchanged) ───────*/
+const RES=new THREE.Vector2(innerWidth,innerHeight);
+const OVER_MAT=new LineMaterial({color:0xffff00,linewidth:0,transparent:true,opacity:1});
+OVER_MAT.resolution.copy(RES);
+let overlayLine=null,hoveredEdge=null,lastPointer=performance.now();
+const ray=new THREE.Raycaster();ray.params.Line.threshold=0.6;
+const mouse=new THREE.Vector2();
+function showOverlay(a,b){
+  if(!overlayLine){overlayLine=new Line2(new LineGeometry(),OVER_MAT);
+    overlayLine.computeLineDistances();scene.add(overlayLine);}
+  overlayLine.geometry.setPositions([a.x,a.y,a.z,b.x,b.y,b.z]);
+  overlayLine.visible=true;
+}
+function hideOverlay(){overlayLine&&(overlayLine.visible=false);}
+window.addEventListener('mousemove',e=>{
+  mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(edges,false);
+  lastPointer=performance.now();
+  if(hit.length){
+    const ed=hit[0].object;
+    if(ed!==hoveredEdge){
+      hoveredEdge=ed;
+      showOverlay(positions[ed.userData.i],positions[ed.userData.j]);
+      tooltip.textContent=ed.userData.gas.toFixed(2)+' gas';
+    }
+    tooltip.style.left=e.clientX+8+'px';
+    tooltip.style.top=e.clientY+8+'px';
+    tooltip.style.opacity=1;
+  }else tooltip.style.opacity=0;
+});
+function updateOverlay(){
+  if(!overlayLine)return;
+  const t=(performance.now()-lastPointer)<150?0.02:0;
+  OVER_MAT.linewidth+=(t-OVER_MAT.linewidth)*0.15;
+  if(t===0&&OVER_MAT.linewidth<0.001){hideOverlay();hoveredEdge=null;}
+}
+
+/*──────── Fail / success visuals ───────*/
+const conf=[],deb=[];
+function burst(ok=true){
+  const arr=ok?conf:deb,
+        cols=ok?[0xffeb3b,0x2196f3,0x8bc34a,0xff9800]:[0xff5252,0xb71c1c,0x9e9e9e];
+  for(let i=0;i<120;i++){
+    const m=new THREE.Mesh(new THREE.PlaneGeometry(0.4,0.8),
+      new THREE.MeshBasicMaterial({color:cols[Math.random()*cols.length|0],
+                                   side:THREE.DoubleSide,transparent:true}));
+    m.position.set(0,mapGroup.position.y+5,0);
+    m.userData={v:new THREE.Vector3((Math.random()-0.5)*4,
+                                     ok?Math.random()*6+3:-(Math.random()*6+3),
+                                     (Math.random()-0.5)*4),
+                life:2+Math.random()*1.2};
+    scene.add(m);arr.push(m);
+  }
+}
+function popMsg(){msg.classList.add('show');setTimeout(()=>msg.classList.remove('show'),1e3);}
+function fail(){burst(false);setTimeout(reset,1200);}
+
+/*──────── Evaluate on route closure ───────*/
+const setsEqual=(A,B)=>A.size===B.size&&[...A].every(x=>B.has(x));
+function evaluate(){
+  if(route.length!==NODE_COUNT+1||route[0]!==route.at(-1)){popMsg();fail();return;}
+  const edgesPlayed=new Set();
+  for(let k=1;k<route.length;k++)edgesPlayed.add(key(route[k-1],route[k]));
+  if(setsEqual(edgesPlayed,OPT_EDGES) && nextIndex===NODE_COUNT){
+    burst(true);
+  }else{popMsg();fail();}
+}
+
+/*──────── Clicks ───────*/
+window.addEventListener('click',e=>{
+  const ui=document.getElementById('ui').getBoundingClientRect();
+  if(e.clientX>ui.left&&e.clientX<ui.right&&e.clientY>ui.top&&e.clientY<ui.bottom)return;
+  if(closed||move)return;
+
+  mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight)*2+1;
+  ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(nodes,true);
+  if(!hit.length)return;const idx=hit[0].object.parent.userData.index;
+
+  if(route.length===0){
+    if(idx!==OPT_ROUTE[0]){popMsg();return;}       // must start optimally
+    addNode(idx);
+    truck=truckModel();truck.position.copy(onMap(positions[idx]));scene.add(truck);
+    setGate(idx,true);currentWH=idx;return;
+  }
+
+  if(route.includes(idx)){
+    if(idx===route[0]&&route.length===NODE_COUNT){
+      addNode(idx);closed=true;moveTruck(route.at(-2),idx);return;
+    }else{popMsg();return;}
+  }else addNode(idx);
+});
+
+/*──────── Reset ───────*/
+function reset(){
+  route=[];gas=0;closed=false;move=null;hideOverlay();OVER_MAT.linewidth=0;
+  score=0;nextIndex=0;scoreEl.textContent=score;
+  routeEl.textContent='';costEl.textContent='0';
+  nodes.forEach((n,i)=>{tint(i,0x4caf50);setGate(i,false);});
+  currentWH=-1;if(truck){scene.remove(truck);truck=null;}
+  [...conf,...deb].forEach(p=>scene.remove(p));conf.length=deb.length=0;
+  tooltip.style.opacity=0;
+}
+document.getElementById('reset').addEventListener('click',reset);
+
+/*──────── Resize ───────*/
+window.addEventListener('resize',()=>{
+  RES.set(innerWidth,innerHeight);OVER_MAT.resolution.copy(RES);
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+/*──────── Main loop ───────*/
+const clock=new THREE.Clock();
+(function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
+  controls.update();updateOverlay();
+
+  nodes.forEach(n=>{
+    const g=n.userData.gate;
+    g.position.y+=(g.userData.targetY-g.position.y)*0.15;
+  });
+
+  if(move){
+    move.el+=dt;const t=Math.min(move.el/move.dur,1);
+    truck.position.lerpVectors(move.from,move.to,t);
+    truck.rotation.y=Math.atan2(move.to.x-move.from.x,move.to.z-move.from.z);
+    if(t>=1){
+      setGate(move.dest,true);
+      move=null;if(closed)setTimeout(evaluate,150);
+    }
+  }
+
+  [conf,deb].forEach(arr=>{
+    for(let i=arr.length-1;i>=0;i--){
+      const p=arr[i];p.userData.v.y-=9.8*dt*0.5;
+      p.position.addScaledVector(p.userData.v,dt);
+      p.rotation.x+=dt*4;p.rotation.y+=dt*5;
+      p.userData.life-=dt;p.material.opacity=p.userData.life/3;
+      if(p.userData.life<=0){scene.remove(p);arr.splice(i,1);}
+    }
+  });
+
+  renderer.render(scene,camera);
+})();
+</script>
+</body>
+</html>
