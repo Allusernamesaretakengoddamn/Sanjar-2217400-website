@@ -8,14 +8,14 @@
 /*───── Base ─────*/
 body{margin:0;overflow:hidden;font-family:Arial,Helvetica,sans-serif;background:#87ceeb}
 
-/*───── Fancy score badge ─────*/
-#scoreboard{position:fixed;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px 24px;border-radius:40px;background:rgba(255,255,255,.25);box-shadow:0 4px 18px rgba(0,0,0,.15);backdrop-filter:blur(8px);font:600 22px/1 "Segoe UI",Arial,sans-serif;color:#000;z-index:11}
+/*───── Fancy score badge (now hidden) ─────*/
+#scoreboard{position:fixed;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;padding:6px 24px;border-radius:40px;background:rgba(255,255,255,.25);box-shadow:0 4px 18px rgba(0,0,0,.15);backdrop-filter:blur(8px);font:600 22px/1 "Segoe UI",Arial,sans-serif;color:#000;z-index:11;display:none}
 #score{font-size:26px;font-weight:700;background:linear-gradient(135deg,#ffb300 0%,#ffeb3b 60%,#fffde7 100%);-webkit-background-clip:text;color:transparent;text-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .28s cubic-bezier(.34,1.56,.64,1)}
 #score.bump{transform:scale(1.35)}
 
 /*───── Level navigation buttons ─────*/
 #levelNav{position:fixed;top:58px;left:50%;transform:translateX(-50%);display:flex;gap:6px;z-index:11}
-.levelBtn{padding:4px 10px;border:0;border-radius:4px;background:#ff7043;color:#fff;font:bold 13px Arial;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:background .18s}
+.levelBtn{padding:6px 14px;border:0;border-radius:4px;background:#ff7043;color:#fff;font:bold 15px Arial;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:background .18s}
 .levelBtn:hover:not([disabled]){background:#f4511e}
 .levelBtn[disabled]{background:#9e9e9e;cursor:not-allowed}
 
@@ -122,7 +122,7 @@ let score = 0, nextIndex = 0, currentWH = -1;
 const scoreEl   = document.getElementById('score');
 const routeEl   = document.getElementById('route');
 const costEl    = document.getElementById('cost');
-const optCostEl = document.getElementById('optCost');   /* NEW */
+const optCostEl = document.getElementById('optCost');   /* shows optimal gas */
 const tooltip   = document.getElementById('tooltip');
 const msg       = document.getElementById('msg');
 const navBtns   = [...document.querySelectorAll('.levelBtn')];
@@ -148,7 +148,7 @@ function moveTruck(a, b) {
   truck.position.copy(move.from);
 }
 
-/* --- NEW: compute optimal gas once per level --- */
+/* --- Optimal-route gas pre-calc --- */
 function optimalGas(levelIdx){
   const { OPT_ROUTE: R, costs: C, NODE_COUNT: N } = levels[levelIdx];
   let g = 0;
@@ -333,26 +333,22 @@ function clearMap() {
 }
 
 /*─────────────────────────────────────────────
-  ★★  THE ONLY CHANGE: instant reset with animation  ★★
+  ★★  instant reset with animation ★★
 ─────────────────────────────────────────────*/
 function reset(init = true) {
-  /* close gates on active map to play their animation */
   const oldMap   = mapGroup;
   const oldNodes = nodes;
 
   if (oldNodes) oldNodes.forEach((n, i) => { tint(i, i === 0 ? 0x03a9f4 : 0x4caf50); setGate(i, false); });
 
-  /* wipe interactive state & UI */
   route = []; gas = 0; closed = false; move = null; score = 0; nextIndex = 0;
   scoreEl.textContent = '0'; routeEl.textContent = ''; costEl.textContent = '0';
-  optCostEl.textContent = optimalGas(currentLevel).toFixed(2);       /* NEW */
+  optCostEl.textContent = optimalGas(currentLevel).toFixed(2);
   if (truck) { scene.remove(truck); truck = null; }
   [...conf, ...deb].forEach(p => scene.remove(p)); conf.length = deb.length = 0;
 
-  /* build NEW map immediately (player can click right away) */
   initLevel();
 
-  /* start new gates fully open, then tell them to close next tick */
   nodes.forEach((n, i) => {
     const g = n.userData.gate;
     const openY = i === 0 ? 2.5 : 2.0;
@@ -361,7 +357,6 @@ function reset(init = true) {
   });
   setTimeout(() => nodes.forEach((_, i) => setGate(i, false)), 20);
 
-  /* after old gates finished closing, remove the old map */
   if (!init && oldMap) setTimeout(() => scene.remove(oldMap), 600);
 }
 document.getElementById('reset').addEventListener('click', () => reset(false));
@@ -473,7 +468,7 @@ function animate() {
 
 /* --- Kick-off --- */
 updateLevelButtons();
-reset(true);   // initial load
+reset(true);
 animate();
 </script>
 </body>
