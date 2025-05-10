@@ -37,9 +37,9 @@ button:hover{background:#1e88e5}
 <body>
 <div id="scoreboard">Score <span id="score">0</span></div>
 <div id="levelNav">
-  <button class="levelBtn" data-level="0">Level 1</button>
-  <button class="levelBtn" data-level="1" disabled>Level 2</button>
-  <button class="levelBtn" data-level="2" disabled>Level 3</button>
+  <button class="levelBtn" data-level="0">Level&nbsp;1</button>
+  <button class="levelBtn" data-level="1" disabled>Level&nbsp;2</button>
+  <button class="levelBtn" data-level="2" disabled>Level&nbsp;3</button>
 </div>
 <div id="controls">
   <button id="reset">Restart</button>
@@ -47,10 +47,10 @@ button:hover{background:#1e88e5}
 </div>
 <div id="ui">
   <p>Visit each warehouse once and come back to the starting point, while minimizing gas expenditure.</p>
-  <p>Route: <span id="route"></span> | Gas: <span id="cost">0</span></p>
+  <p>Route: <span id="route"></span> | Gas: <span id="cost">0</span> | Optimal: <span id="optCost">0</span></p>
 </div>
 <div id="tooltip"></div>
-<div id="msg">TRY AGAIN!</div>
+<div id="msg">TRY&nbsp;AGAIN!</div>
 
 <script type="module">
 import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js?module';
@@ -119,12 +119,13 @@ let route = [], gas = 0, closed = false, truck = null, move = null;
 let score = 0, nextIndex = 0, currentWH = -1;
 
 /* --- UI Elements --- */
-const scoreEl = document.getElementById('score');
-const routeEl = document.getElementById('route');
-const costEl = document.getElementById('cost');
-const tooltip = document.getElementById('tooltip');
-const msg = document.getElementById('msg');
-const navBtns = [...document.querySelectorAll('.levelBtn')];
+const scoreEl   = document.getElementById('score');
+const routeEl   = document.getElementById('route');
+const costEl    = document.getElementById('cost');
+const optCostEl = document.getElementById('optCost');   /* NEW */
+const tooltip   = document.getElementById('tooltip');
+const msg       = document.getElementById('msg');
+const navBtns   = [...document.querySelectorAll('.levelBtn')];
 
 /* --- Utility Functions --- */
 const SPEED = 25;
@@ -145,6 +146,17 @@ function moveTruck(a, b) {
     el  : 0, dest: b
   };
   truck.position.copy(move.from);
+}
+
+/* --- NEW: compute optimal gas once per level --- */
+function optimalGas(levelIdx){
+  const { OPT_ROUTE: R, costs: C, NODE_COUNT: N } = levels[levelIdx];
+  let g = 0;
+  for(let i=0;i<N;i++){
+    const a = R[i], b = R[(i+1)%N];
+    g += C[a][b];
+  }
+  return g;
 }
 
 /* --- Route Logic --- */
@@ -333,6 +345,7 @@ function reset(init = true) {
   /* wipe interactive state & UI */
   route = []; gas = 0; closed = false; move = null; score = 0; nextIndex = 0;
   scoreEl.textContent = '0'; routeEl.textContent = ''; costEl.textContent = '0';
+  optCostEl.textContent = optimalGas(currentLevel).toFixed(2);       /* NEW */
   if (truck) { scene.remove(truck); truck = null; }
   [...conf, ...deb].forEach(p => scene.remove(p)); conf.length = deb.length = 0;
 
