@@ -307,25 +307,58 @@
     function fail() { burst(false); setTimeout(() => reset(false), 1200); }
 
     /* --- Evaluation --- */
-    function evaluate() {
-      if (route.length !== levels[currentLevel].NODE_COUNT + 1 || route[0] !== route.at(-1)) { popMsg(); fail(); return; }
-      const edgesPlayed = new Set();
-      for (let k = 1; k < route.length; k++) edgesPlayed.add(key(route[k - 1], route[k]));
-      const optSet = new Set(levels[currentLevel].OPT_ROUTE.map((v, i) => key(v, levels[currentLevel].OPT_ROUTE[(i + 1) % levels[currentLevel].NODE_COUNT])));
-      if (edgesPlayed.size === optSet.size && [...optSet].every(x => edgesPlayed.has(x)) && nextIndex === levels[currentLevel].NODE_COUNT) {
-        burst(true);
+function evaluate() {
+  // 1) Reject any non-Hamiltonian or non-closed route
+  if (route.length !== levels[currentLevel].NODE_COUNT + 1 ||
+      route[0] !== route.at(-1)) {
+    popMsg();
+    fail();
+    return;
+  }
+
+  // 2) Build the set of edges actually traversed
+  const edgesPlayed = new Set();
+  for (let k = 1; k < route.length; k++) {
+    edgesPlayed.add(key(route[k - 1], route[k]));
+  }
+
+  // 3) Build the set of edges in the prescribed optimal cycle
+  const optSet = new Set(
+    levels[currentLevel].OPT_ROUTE.map((v, i) =>
+      key(
+        v,
+        levels[currentLevel].OPT_ROUTE[
+          (i + 1) % levels[currentLevel].NODE_COUNT
+        ]
+      )
+    )
+  );
+
+  // 4) **WIN CONDITION**: Drop the `nextIndex` requirement so that
+  //    both the route and its reverse satisfy it.
+  if (
+    edgesPlayed.size === optSet.size &&
+    [...optSet].every(x => edgesPlayed.has(x))
+  ) {
+    // winning
+    burst(true);
+    maxLevelReached = Math.max(maxLevelReached, currentLevel);
+    updateLevelButtons();
+    setTimeout(() => {
+      if (currentLevel < levels.length - 1) {
+        currentLevel++;
         maxLevelReached = Math.max(maxLevelReached, currentLevel);
         updateLevelButtons();
-        setTimeout(() => {
-          if (currentLevel < levels.length - 1) {
-            currentLevel++;
-            maxLevelReached = Math.max(maxLevelReached, currentLevel);
-            updateLevelButtons();
-            reset(false);
-          }
-        }, 1500);
-      } else { popMsg(); fail(); }
-    }
+        reset(false);
+      }
+    }, 1500);
+
+  } else {
+    // losing
+    popMsg();
+    fail();
+  }
+}
 
     /* --- Input Handlers --- */
     window.addEventListener('click', e => {
