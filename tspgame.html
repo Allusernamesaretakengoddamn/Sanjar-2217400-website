@@ -277,30 +277,50 @@
     controls.dampingFactor = 0.1;
     controls.target.set(0, 9, 0);
 
-    /* Lighting & Skyline */
-    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
-    const dl = new THREE.DirectionalLight(0xffffff, 0.9);
-    dl.position.set(14, 30, 10);
-    scene.add(dl);
+    /* ---------- Lighting & Skyline  (REPLACE THIS WHOLE BLOCK) ---------- */
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
-    const skyline = new THREE.Group();
-    for (let i = 0; i < 100; i++) {
-      const w = 2 + Math.random() * 4,
-        d = 2 + Math.random() * 4,
-        h = 8 + Math.random() * 27;
-      const m = new THREE.Mesh(
-        new THREE.BoxGeometry(w, h, d),
-        new THREE.MeshStandardMaterial({
-          color: 0x1a237e,
-          flatShading: true,
-        })
-      );
-      const ang = Math.random() * Math.PI * 2,
-        dist = 70 + Math.random() * 20;
-      m.position.set(Math.cos(ang) * dist, h / 2 - 1, Math.sin(ang) * dist);
-      skyline.add(m);
-    }
-    scene.add(skyline);
+const dl = new THREE.DirectionalLight(0xffffff, 0.9);
+dl.position.set(14, 30, 10);
+scene.add(dl);
+
+/* ── Two-band skyline  |  closer to the map + extended city  ───────────
+   • Band 1  (28-40 u) hugs the play-field, leaving ~2 “warehouse radii”
+     of empty space beyond the outermost node (~19 u).
+   • Band 2  (40-90 u) pushes outward so the city isn’t a single wall.
+   • Total buildings ≈ 105 → same overall density as the original 100.
+   • Positions are fully random (angle & radius) → no visible rings.     */
+const skyline = new THREE.Group();
+
+addBuildings( 35, 28, 40);  // inner band   (closer)
+addBuildings( 70, 40, 90);  // outer band   (extends outward)
+
+scene.add(skyline);
+
+/* helper : scatters “count” buildings in the radial shell [rMin, rMax] */
+function addBuildings(count, rMin, rMax) {
+  for (let i = 0; i < count; i++) {
+    const w = 2 + Math.random() * 4,
+          d = 2 + Math.random() * 4,
+          h = 8 + Math.random() * 27;
+
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(w, h, d),
+      new THREE.MeshStandardMaterial({ color: 0x1a237e, flatShading: true })
+    );
+
+    const radius = rMin + Math.random() * (rMax - rMin);  // random distance
+    const angle  = Math.random() * Math.PI * 2;           // random angle
+    mesh.position.set(
+      Math.cos(angle) * radius,
+      h / 2 - 1,
+      Math.sin(angle) * radius
+    );
+
+    skyline.add(mesh);
+  }
+}
+/* ---------- Skyline block END -------------------------------------- */
 
     /* --- Game State Variables --- */
     let mapGroup,
